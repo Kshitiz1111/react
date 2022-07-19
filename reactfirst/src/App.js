@@ -1,4 +1,6 @@
 import React from 'react';
+import axios from 'axios';
+import { ReactComponent as Check } from './check.svg';
 import './App.css';
 
 
@@ -36,6 +38,27 @@ const storiesReducer = (state, action)=>{
  }
 }
 
+const SearchForm = ({searchTerm, onSearchInput, onSearchSubmit})=>(
+  <form  onSubmit={onSearchSubmit} className="search-form">
+      <InputWithLable 
+        type={"text"}
+        isFocused
+        onInputChange={onSearchInput}
+        initVal={searchTerm} 
+        label={'Search'}>
+          <strong>Search:</strong>
+        </InputWithLable>
+
+        <button 
+          type ="submit"
+          disabled={!searchTerm}
+          className="button button_large"
+        >
+          Submit
+        </button>
+    </form>
+)
+
 const App = () =>{
   // const initialStories = [ 
   //   { title: 'React',
@@ -72,22 +95,36 @@ const App = () =>{
   //     2000
   //     )
   //  );
-  
+  const [url, setUrl] = React.useState(`${API_ENDPOINT}${searchTerm}`)
 
-  React.useEffect(()=>{
+  const handleSearch = (event)=>{
+    setSearchTerm(event.target.value);
+  };
+
+  const handleSearchSubmit = (event)=>{
+    setUrl(`${API_ENDPOINT}${searchTerm}`);
+    event.preventDefault();
+  }
+
+  const handleFetchStories = React.useCallback(()=>{
     if(!searchTerm) return;
    dispatchStories({type:'STORIES_FETCH_INIT'});
 
-    fetch(`${API_ENDPOINT}${searchTerm}`).then((response)=>response.json())
+    axios(url)
    .then((result)=>{
       dispatchStories({
         type: 'STORIES_FETCH_SUCCESS',
-        payload: result.hits
+        payload: result.data.hits
       });
     }).catch(()=>
       dispatchStories({type: 'STORIES_FETCH_FAILURE'})
     );
-  },[searchTerm]);
+  } 
+  ,[url]);
+
+  React.useEffect(()=>{
+    handleFetchStories();
+  },[handleFetchStories]);
 
 
   const handleRemoveStory = (item)=>{
@@ -98,24 +135,20 @@ const App = () =>{
       });
   }
 
-  const handleSearch = (event)=>{
-    setSearchTerm(event.target.value);
-  };
 
   // const searchedStories = stories.data.filter(function(story){
   //   return story.title.toLowerCase().includes(searchTerm.toLowerCase())
   // });
 
 return(
-    <div className="App">
-    <InputWithLable 
-      type={"text"}
-      isFocused
-      onInputChange={handleSearch}
-      initVal={searchTerm} 
-      label={'Search'}>
-        <strong>Search:</strong>
-      </InputWithLable>
+    <div className="App container">
+      <h1 className='headline-primary'>My Hacker Stories</h1>
+    <SearchForm 
+      searchTerm={searchTerm} 
+      onSearchInput={handleSearch} 
+      onSearchSubmit={handleSearchSubmit}
+      />
+    
 
     {stories.isError && <p>Something Went wrong.</p>}  
     {(stories.isLoading ? (<p>loading...</p>) : 
@@ -152,18 +185,24 @@ const List  = ({list, onRemoveItem}) =>(
 const Item = ({item, onRemoveItem})=>{
 
   return(
-  <li>
-  <a href = {item.url}>{item.title}</a><br></br>
-  <span>author:{item.author}</span><br></br>
-  <span>comment:{item.num_comments}</span><br></br>
-  <span>points:{item.points}</span>
-  <span>
+  <li className='item'>
+  <span style={{ width: '40%' }}>
+  <a href = {item.url} >{item.title}</a>
+  </span>
+  
+  <span style={{ width: '30%' }}>author:{item.author}</span>
+  <span style={{ width: '10%' }}>comment:{item.num_comments}</span>
+  <span style={{ width: '10%' }}>points:{item.points}</span>
+  <span style={{ width: '10%' }}>
     <button
     type="button" 
     onClick={()=>{
        onRemoveItem(item);
-      }
-    }>X</button>
+      }}
+      className="button button_small"
+      >
+      <Check height="18px" width="18px"/>
+      </button>
   </span>
 </li>
 );
@@ -180,14 +219,15 @@ const InputWithLable  = ({initVal, onInputChange, label, type='text', children,i
 
   return(
   <>
-    <label htmlFor={label}>{children}</label>
+    <label htmlFor={label} className="label">{children}</label>
     <input id={label}
       ref={inputRef}
       type={type}
       onChange={onInputChange} 
-      value={initVal}/>
-    <p>{initVal}</p>
-  </>
+      value={initVal}
+      className="input"
+      />
+  </> 
   );
 };
 export default App;
