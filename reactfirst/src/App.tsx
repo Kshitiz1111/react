@@ -3,9 +3,58 @@ import axios from 'axios';
 import { ReactComponent as Check } from './check.svg';
 import './App.css';
 
+//custom story type
+type Story = { 
+  objectID: string; 
+  url: string; 
+  title: string; 
+  author: string; 
+  num_comments: number; 
+  points: number; 
+};
 
+const getSumComments = (stories:StoriesState) => 
+  { console.log('C'); 
+  return stories.data.reduce( 
+    (result, value) => result + value.num_comments, 
+    0 
+    ); 
+  };
+
+type StoriesState = {
+  data: Stories;
+  isLoading: boolean;
+  isError: boolean;
+};
+// type StoriesAction = {
+//   type: string;
+//   payload: any;
+// };
+interface StoriesFetchInitAction{
+  type: 'STORIES_FETCH_INIT';
+}
+interface StoriesFetchSuccessAction{
+  type: 'STORIES_FETCH_SUCCESS';
+  payload: Stories;
+}
+interface StoriesFetchFailureAction{
+  type: 'STORIES_FETCH_FAILURE';
+}
+interface StroiesRemoveAction{
+  type: 'REMOVE_STORY';
+  payload: Story;
+}
+
+type StoriesAction = 
+| StoriesFetchInitAction
+| StoriesFetchSuccessAction
+| StoriesFetchFailureAction
+| StroiesRemoveAction;
 //reducer function
-const storiesReducer = (state, action)=>{
+const storiesReducer = (
+  state: StoriesState, 
+  action: StoriesAction
+)=>{
  switch(action.type){
   case 'STORIES_FETCH_INIT':
     return{
@@ -38,7 +87,12 @@ const storiesReducer = (state, action)=>{
  }
 }
 
-const SearchForm = ({searchTerm, onSearchInput, onSearchSubmit})=>(
+type SearchFormProps = {
+  searchTerm: string;
+  onSearchInput: (event: React.ChangeEvent<HTMLInputElement>)=> void;
+  onSearchSubmit: (event: React.FormEvent<HTMLFormElement>)=> void;
+}
+const SearchForm = ({searchTerm, onSearchInput, onSearchSubmit}:SearchFormProps)=>(
   <form  onSubmit={onSearchSubmit} className="search-form">
       <InputWithLable 
         type={"text"}
@@ -59,6 +113,7 @@ const SearchForm = ({searchTerm, onSearchInput, onSearchSubmit})=>(
     </form>
 )
 
+
 const App = () =>{
   // const initialStories = [ 
   //   { title: 'React',
@@ -76,6 +131,7 @@ const App = () =>{
   //        objectID: 1,
   //  },
   // ];
+  console.log("B:APP");
   const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query=";
 
   const [searchTerm, setSearchTerm] = useSemiPersistentState('search','react');
@@ -97,11 +153,11 @@ const App = () =>{
   //  );
   const [url, setUrl] = React.useState(`${API_ENDPOINT}${searchTerm}`)
 
-  const handleSearch = (event)=>{
+  const handleSearch = (event: React.ChangeEvent<HTMLInputElement>)=>{
     setSearchTerm(event.target.value);
   };
 
-  const handleSearchSubmit = (event)=>{
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>)=>{
     setUrl(`${API_ENDPOINT}${searchTerm}`);
     event.preventDefault();
   }
@@ -127,22 +183,26 @@ const App = () =>{
   },[handleFetchStories]);
 
 
-  const handleRemoveStory = (item)=>{
+  const handleRemoveStory = React.useCallback(
+    (item: Story)=>{
 
       dispatchStories({
         type: "REMOVE_STORY",
         payload: item
       });
   }
-
+  ,[]);
 
   // const searchedStories = stories.data.filter(function(story){
   //   return story.title.toLowerCase().includes(searchTerm.toLowerCase())
   // });
-
+const sumComments = React.useMemo(
+  ()=>getSumComments(stories),
+  [stories]
+)
 return(
     <div className="App container">
-      <h1 className='headline-primary'>My Hacker Stories</h1>
+      <h1 className='headline-primary'>My Hacker Stories with {sumComments} comments</h1>
     <SearchForm 
       searchTerm={searchTerm} 
       onSearchInput={handleSearch} 
@@ -158,32 +218,63 @@ return(
     </div>
 )}
 
-const useSemiPersistentState = (key,initialState)=>{
+const useSemiPersistentState = (
+  //argument type
+  key:string, initialState:string
+  //return type of the function first state and 
+  //second updater funciton only take a string as 
+  //an argument and return nothing:
+  
+  ):[string,(newValue:string)=>void]=>{
+  var isMounted = React.useRef(false);
 
-  const [value, setValue] = React.useState(
+  var [value, setValue] = React.useState(
     localStorage.getItem(key) ?? initialState
   );
 
   React.useEffect(()=>{
+   if(!isMounted.current){
+    isMounted.current = true;
+    // console.log("initial state, avoide render");
+   }else{
     localStorage.setItem(key,value);
-    console.log("useeffect");
+    // console.log("stored localStorage rendered");
+   }
   },[key,value]);
   
   return [value,setValue];
 };
 
-const List  = ({list, onRemoveItem}) =>( 
-     <ul>{
-      
-      list.map((item)=> (
-          <Item  key = {item.objectID} item={item} onRemoveItem = {onRemoveItem} />
-      ))}
-      </ul>
-);
+type Stories = Array<Story>;
+type ListProps = {
+  list: Stories;
+  onRemoveItem: (item:Story)=>void;
+}
+const List  = React.memo(
+  ({list, onRemoveItem}: ListProps) => ( 
+      <ul>{
+        
+        list.map((item)=> (
+            <Item  key = {item.objectID} item={item} onRemoveItem = {onRemoveItem} />
+        ))}
+        </ul>
+  )
+);  
+//custom story type
+// type Story = { 
+//   objectID: string; 
+//   url: string; 
+//   title: string; 
+//   author: string; 
+//   num_comments: number; 
+//   points: number; 
+// };
+type ItemProps = {
+  item:Story;
+  onRemoveItem: (item:Story)=>void;
+}
 
-
-const Item = ({item, onRemoveItem})=>{
-
+const Item = ({item, onRemoveItem}: ItemProps)=>{
   return(
   <li className='item'>
   <span style={{ width: '40%' }}>
@@ -207,9 +298,25 @@ const Item = ({item, onRemoveItem})=>{
 </li>
 );
 };
-const InputWithLable  = ({initVal, onInputChange, label, type='text', children,isFocused,}) => {
 
-  const inputRef = React.useRef();
+type InputWithLableProps = {
+  initVal: string;
+  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  label: string;
+  //telling compiler type property is optional by giving question mark
+  type?: string;
+  isFocused?: boolean;
+  children: React.ReactNode;
+}
+const InputWithLable  = ({
+  initVal, 
+  onInputChange, 
+  label, 
+  type='text', 
+  children,
+  isFocused,
+}:InputWithLableProps) => {
+  const inputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(()=>{
     if(isFocused && inputRef.current){
