@@ -1,6 +1,6 @@
 import React from 'react';
 import axios from 'axios';
-import { ReactComponent as Check } from './check.svg';
+// import { ReactComponent as Check } from './';
 import './App.css';
 
 //custom story type
@@ -226,9 +226,9 @@ const useSemiPersistentState = (
   //an argument and return nothing:
   
   ):[string,(newValue:string)=>void]=>{
-  var isMounted = React.useRef(false);
+  const isMounted = React.useRef(false);
 
-  var [value, setValue] = React.useState(
+  const [value, setValue] = React.useState(
     localStorage.getItem(key) ?? initialState
   );
 
@@ -292,7 +292,7 @@ const Item = ({item, onRemoveItem}: ItemProps)=>{
       }}
       className="button button_small"
       >
-      <Check height="18px" width="18px"/>
+      {/* <Check height="18px" width="18px"/> */}
       </button>
   </span>
 </li>

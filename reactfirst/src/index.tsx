@@ -6,11 +6,12 @@ import reportWebVitals from './reportWebVitals';
 //we are sure that the id root will always exist. 
 //Hence we can specify that rootElement is always
 //non-null by using ! symbol after it
-const root = ReactDOM.createRoot(document.getElementById('root')!);
+const rootElement = document.getElementById('root');
+const root = ReactDOM.createRoot( rootElement!);
 root.render(
-  <React.StrictMode>
+  // <React.StrictMode>
     <App />
-  </React.StrictMode>
+  // </React.StrictMode>
 );
 
 // If you want to start measuring performance in your app, pass a function
