@@ -2,8 +2,11 @@ import React from 'react';
 import axios from 'axios';
 // import { ReactComponent as Check } from './';
 import './App.css';
+import {List} from './List';
+import {SearchForm} from './SearchForm';
 
 //custom story type
+
 type Story = { 
   objectID: string; 
   url: string; 
@@ -12,7 +15,11 @@ type Story = {
   num_comments: number; 
   points: number; 
 };
-
+type Stories = Array<Story>;
+type ListProps = {
+  list: Stories;
+  onRemoveItem: (item:Story)=>void;
+}
 const getSumComments = (stories:StoriesState) => 
   { console.log('C'); 
   return stories.data.reduce( 
@@ -86,33 +93,6 @@ const storiesReducer = (
       throw new Error();
  }
 }
-
-type SearchFormProps = {
-  searchTerm: string;
-  onSearchInput: (event: React.ChangeEvent<HTMLInputElement>)=> void;
-  onSearchSubmit: (event: React.FormEvent<HTMLFormElement>)=> void;
-}
-const SearchForm = ({searchTerm, onSearchInput, onSearchSubmit}:SearchFormProps)=>(
-  <form  onSubmit={onSearchSubmit} className="search-form">
-      <InputWithLable 
-        type={"text"}
-        isFocused
-        onInputChange={onSearchInput}
-        initVal={searchTerm} 
-        label={'Search'}>
-          <strong>Search:</strong>
-        </InputWithLable>
-
-        <button 
-          type ="submit"
-          disabled={!searchTerm}
-          className="button button_large"
-        >
-          Submit
-        </button>
-    </form>
-)
-
 
 const App = () =>{
   // const initialStories = [ 
@@ -245,21 +225,7 @@ const useSemiPersistentState = (
   return [value,setValue];
 };
 
-type Stories = Array<Story>;
-type ListProps = {
-  list: Stories;
-  onRemoveItem: (item:Story)=>void;
-}
-const List  = React.memo(
-  ({list, onRemoveItem}: ListProps) => ( 
-      <ul>{
-        
-        list.map((item)=> (
-            <Item  key = {item.objectID} item={item} onRemoveItem = {onRemoveItem} />
-        ))}
-        </ul>
-  )
-);  
+
 //custom story type
 // type Story = { 
 //   objectID: string; 
@@ -269,72 +235,7 @@ const List  = React.memo(
 //   num_comments: number; 
 //   points: number; 
 // };
-type ItemProps = {
-  item:Story;
-  onRemoveItem: (item:Story)=>void;
-}
 
-const Item = ({item, onRemoveItem}: ItemProps)=>{
-  return(
-  <li className='item'>
-  <span style={{ width: '40%' }}>
-  <a href = {item.url} >{item.title}</a>
-  </span>
-  
-  <span style={{ width: '30%' }}>author:{item.author}</span>
-  <span style={{ width: '10%' }}>comment:{item.num_comments}</span>
-  <span style={{ width: '10%' }}>points:{item.points}</span>
-  <span style={{ width: '10%' }}>
-    <button
-    type="button" 
-    onClick={()=>{
-       onRemoveItem(item);
-      }}
-      className="button button_small"
-      >
-      {/* <Check height="18px" width="18px"/> */}
-      </button>
-  </span>
-</li>
-);
-};
 
-type InputWithLableProps = {
-  initVal: string;
-  onInputChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  label: string;
-  //telling compiler type property is optional by giving question mark
-  type?: string;
-  isFocused?: boolean;
-  children: React.ReactNode;
-}
-const InputWithLable  = ({
-  initVal, 
-  onInputChange, 
-  label, 
-  type='text', 
-  children,
-  isFocused,
-}:InputWithLableProps) => {
-  const inputRef = React.useRef<HTMLInputElement>(null);
-
-  React.useEffect(()=>{
-    if(isFocused && inputRef.current){
-      inputRef.current.focus();
-    }
-  },[isFocused]); 
-
-  return(
-  <>
-    <label htmlFor={label} className="label">{children}</label>
-    <input id={label}
-      ref={inputRef}
-      type={type}
-      onChange={onInputChange} 
-      value={initVal}
-      className="input"
-      />
-  </> 
-  );
-};
 export default App;
+export { storiesReducer, SearchForm,}
